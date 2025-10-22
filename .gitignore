@@ -1,0 +1,32 @@
+# Pastas de compilação
+/out/
+/bin/
+/target/
+
+# Configurações do IntelliJ IDEA
+/.idea/
+/*.iml
+
+# Configurações do Eclipse
+*.classpath
+*.project
+*.settings/
+
+# Configurações do VSCode
+.vscode/
+
+# Arquivos temporários e logs
+*.log
+*.tmp
+*.temp
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Dependências externas
+*.jar
+lib/
+
+# Configurações locais e sensíveis
+.env
