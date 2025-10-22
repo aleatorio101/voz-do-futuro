@@ -15,10 +15,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import dao.UsuarioDAO;
 import dao.PropostaDAO;
-import model.PropostaDTO;
-import model.PropostaResponseDTO;
-import model.Usuario;
-import model.Proposta;
+import model.*;
 
 public class Main {
 
@@ -48,19 +45,29 @@ public class Main {
 
             try {
                 switch (method) {
+                    case "POST":
+                    String requestBody = new String(exchange.getRequestBody().readAllBytes());
+                    UsuarioDTO usuarioDTO = gson.fromJson(requestBody, UsuarioDTO.class);
+
+                    Usuario novoUsuario = new Usuario(
+                            usuarioDTO.getNome(),
+                            usuarioDTO.getEmail(),
+                            usuarioDTO.getSenha(),
+                            usuarioDTO.getTipo()
+                    );
+
+                    dao.inserir(novoUsuario);
+                    response = "{\"mensagem\": \"Usuário criado com sucesso\"}";
+                    break;
+
                     case "GET":
                         List<Usuario> usuarios = dao.listarTodos();
-                        response = gson.toJson(usuarios);
+                        List<UsuarioResponseDTO> responseList = usuarios.stream()
+                                .map(UsuarioResponseDTO::new)
+                                .collect(Collectors.toList());
+                        response = gson.toJson(responseList);
                         break;
 
-                    case "POST":
-                        Usuario novo = gson.fromJson(
-                            new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8),
-                            Usuario.class
-                        );
-                        dao.inserir(novo);
-                        response = gson.toJson(new Response("Usuário cadastrado com sucesso!"));
-                        break;
 
                     default:
                         status = 405;
