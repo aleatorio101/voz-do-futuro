@@ -146,8 +146,6 @@ public class Main {
         }
     }
 
-
-
     private static class Response {
         private final String mensagem;
         

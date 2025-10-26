@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Vozes do Futuro</title>
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
@@ -23,6 +24,69 @@
                 linear-gradient(180deg, var(--azul-1), #f6f8ff 60%);
         }
 
+        /* ===== HEADER EM TONS DE AZUL ===== */
+        .cloudy-header {
+            background: radial-gradient(1000px 500px at 30% -20%, var(--azul-3), transparent 70%),
+                radial-gradient(1000px 500px at 70% -20%, var(--azul-2), transparent 70%),
+                linear-gradient(180deg, var(--azul-1), #f6f8ff 80%);
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(100, 120, 200, 0.15);
+        }
+
+        .cloudy-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            z-index: 0;
+        }
+
+        .cloudy-header::after {
+            content: "";
+            position: absolute;
+            bottom: -25px;
+            left: 10%;
+            width: 160px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow:
+                40px 10px 0 0 rgba(255, 255, 255, 0.8),
+                80px 5px 0 0 rgba(255, 255, 255, 0.8),
+                120px 15px 0 0 rgba(255, 255, 255, 0.8);
+            animation: floatClouds 18s infinite ease-in-out;
+            z-index: 0;
+        }
+
+        @keyframes floatClouds {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(20px);
+            }
+        }
+
+        .brand-title {
+            position: relative;
+            z-index: 1;
+            color: #1f3fb4;
+            font-weight: 700;
+        }
+
+        .brand-sub {
+            position: relative;
+            z-index: 1;
+            color: #3f58b0;
+        }
+
+        /* ===== ELEMENTOS DO RESTANTE DA PÁGINA ===== */
         .glass {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(6px);
@@ -94,18 +158,30 @@
 </head>
 
 <body>
+
+    <!-- HEADER -->
+    <header class="cloudy-header">
+        <div class="container text-center py-5 position-relative">
+            <h1 class="brand-title display-5 mb-2">☁️ Vozes do Futuro</h1>
+            <p class="brand-sub fs-5 mb-0">Compartilhe ideias e construa um futuro melhor com sua comunidade</p>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
     <div class="container py-5">
         <div class="row g-4">
 
-            <!-- Coluna Esquerda: Formulário (POST com AJAX) -->
+            <!-- COLUNA ESQUERDA: FORM -->
             <div class="col-12 col-lg-6">
                 <div class="glass p-4 p-md-5 h-100">
-                    <h3 class="mb-1">
-                        <span class="title-emoji">✨</span> Crie sua Proposta
-                    </h3>
-                    <p class="input-hint mb-4">
-                        Compartilhe suas ideias para melhorar nossa comunidade!
-                    </p>
+                    <div class="text-center mb-4">
+                        <h3 class="mb-1">
+                            <span class="title-emoji">✨</span> Crie sua Proposta
+                        </h3>
+                        <p class="input-hint mb-0">
+                            Compartilhe suas ideias para melhorar nossa comunidade!
+                        </p>
+                    </div>
 
                     <form id="formProposta" class="needs-validation" novalidate>
                         <div class="mb-3">
@@ -128,18 +204,6 @@
                                 placeholder="Informe seu ID de usuário" required>
                             <div class="invalid-feedback">Informe o ID do usuário.</div>
                         </div>
-
-                        <div class="mb-4">
-                            <label class="small-label" for="status">Status</label>
-                            <select id="status" name="status" class="form-select form-select-lg" required>
-                                <option value="">Selecione...</option>
-                                <option value="PENDENTE" selected>Pendente</option>
-                                <option value="APROVADA">Aprovada</option>
-                                <option value="REJEITADA">Rejeitada</option>
-                            </select>
-                            <div class="invalid-feedback">Informe o status.</div>
-                        </div>
-
                         <div class="d-grid">
                             <button class="btn btn-primary btn-lg btn-rocket" type="submit">Enviar Proposta</button>
                         </div>
@@ -147,38 +211,37 @@
                 </div>
             </div>
 
-
-            <!-- Coluna Direita dos cards -->
+            <!-- COLUNA DIREITA: CARDS -->
             <div class="col-12 col-lg-6">
-                <div class="d-flex align-items-center mb-3">
-                    <h3 class="mb-0"><span class="title-emoji">💡</span> Propostas da Comunidade</h3>
-                    <span class="ms-2 muted">Veja as ideias incríveis de outros jovens cidadãos!</span>
-                </div>
-
-                <div id="listaPropostas" class="d-flex flex-column gap-3">
+                <div class="glass p-4 p-md-5 h-100 d-flex flex-column">
+                    <div class="mb-3 text-center">
+                        <h3 class="fw-bold mb-3">
+                            <span class="title-emoji">💡</span> Propostas da Comunidade
+                        </h3>
+                    </div>
+                    <div id="listaPropostas" class="d-flex flex-column gap-3 mt-3 flex-grow-1"></div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Toast de sucesso -->
-    <div class="floating-toast">
-        <div id="toastOk" class="toast align-items-center text-bg-dark border-0" role="status" aria-live="polite"
-            aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body">
-                    ✅ Pronto! Sua proposta foi enviada.
+            <!-- TOAST DE SUCESSO -->
+            <div class="floating-toast">
+                <div id="toastOk" class="toast align-items-center text-bg-dark border-0" role="status"
+                    aria-live="polite" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ✅ Pronto! Sua proposta foi enviada.
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                            aria-label="Fechar"></button>
+                    </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-                    aria-label="Fechar"></button>
             </div>
-        </div>
-    </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="js.js"></script>
+            <!-- Bootstrap + jQuery -->
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+            <script src="js.js"></script>
+
 </body>
 
 </html>

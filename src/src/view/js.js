@@ -1,7 +1,9 @@
-// get do lado direito para criar os cards dinamicamente 
+const API_MAIN = "Main";
+
+// get do lado direito para criar os cards dinamicamente
 function carregarPropostas() {
   $.ajax({
-    url: "http://localhost:8080/voz-do-futuro/api/propostas", // verificar a rota e arrumar essa porra
+    url: `${API_MAIN}?action=listarPropostas`, // verificar a rota e arrumar essa porra
     type: "GET",
     dataType: "json",
     success: function (res) {
@@ -14,7 +16,7 @@ function carregarPropostas() {
         return;
       }
 
-      $("#listaPropostas").empty();  //vazio 
+      $("#listaPropostas").empty(); //vazio
       res.forEach(function (p) {
         const card = `
             <div class="glass p-3 p-md-4">
@@ -25,9 +27,12 @@ function carregarPropostas() {
         $("#listaPropostas").append(card);
       });
     },
-    error: function (xhr) {
-      alert("Erro ao carregar propostas.");
-      console.error(xhr);
+    error: function () {
+        $("#listaPropostas").html(`
+          <div class="glass p-4 text-center text-muted">
+            Nenhuma proposta ainda.<br> Envie a primeira usando o formulário ao lado. 🎉
+          </div>
+        `);
     },
   });
 }
@@ -48,12 +53,12 @@ $("#formProposta").on("submit", function (e) {
     titulo: $("#titulo").val().trim(), // da pra formatar cada um deles assim ou dentro do ajax
     descricao: $("#descricao").val().trim(),
     usuarioId: parseInt($("#usuarioId").val()),
-    status: $("#status").val(),
+    status: "ENVIADA",
     dataEnvio: new Date().toISOString().slice(0, 19).replace("T", " "),
   };
 
   $.ajax({
-    url: "http://localhost:8080/voz-do-futuro/api/propostas", // verificar onde demonios esta a rota
+    url: `${API_MAIN}?action=criarProposta`, // verificar onde demonios esta a rota
     type: "POST",
     contentType: "application/json", // ai no caso a gente pode formatar aqui dentro tb legal neh?
     data: JSON.stringify(proposta),
