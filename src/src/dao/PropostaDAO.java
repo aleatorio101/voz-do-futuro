@@ -6,7 +6,6 @@ import model.Proposta;
 import java.time.LocalDateTime;
 
 public class PropostaDAO {
-
     public List<Proposta> listarTodas() throws SQLException {
         List<Proposta> propostas = new ArrayList<>();
 
