@@ -4,26 +4,18 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import dao.UsuarioDAO;
-import dao.PropostaDAO;
-import model.*;
+import service.PropostaService;
+import service.UsuarioService;
 
 public class Main {
 
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .create();
-
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
@@ -37,161 +29,61 @@ public class Main {
     }
 
     static class UsuarioHandler implements HttpHandler {
+        private final UsuarioService usuarioService;
+
+        public UsuarioHandler() {
+            this.usuarioService = new UsuarioService();
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
-            UsuarioDAO dao = new UsuarioDAO();
-            String response = "";
-            int status = 200;
-
-            try {
-                if ("POST".equals(method) && path.endsWith("/usuarios/id")) {
-
-                    String requestBody = new String(exchange.getRequestBody().readAllBytes());
-                    Map<String, String> body = gson.fromJson(requestBody, Map.class);
-                    String email = body.get("email");
-
-                    Integer id = dao.buscarIdPorEmail(email);
-                    if (id != null) {
-                        response = gson.toJson(Map.of("id", id));
-                    } else {
-                        status = 404;
-                        response = gson.toJson(Map.of("erro", "Usuário não encontrado"));
-                    }
-
-                } else if ("POST".equals(method) && path.endsWith("/usuarios")) {
-
-                    String requestBody = new String(exchange.getRequestBody().readAllBytes());
-                    UsuarioDTO usuarioDTO = gson.fromJson(requestBody, UsuarioDTO.class);
-
-                    Usuario novoUsuario = new Usuario(
-                            usuarioDTO.getNome(),
-                            usuarioDTO.getEmail(),
-                            usuarioDTO.getSenha(),
-                            usuarioDTO.getTipo()
-                    );
-
-                    dao.inserir(novoUsuario);
-                    response = "{\"mensagem\": \"Usuário criado com sucesso\"}";
-
-                } else if ("GET".equals(method)) {
-                    List<Usuario> usuarios = dao.listarTodos();
-                    List<UsuarioResponseDTO> responseList = usuarios.stream()
-                            .map(UsuarioResponseDTO::new)
-                            .collect(Collectors.toList());
-                    response = gson.toJson(responseList);
-
-                } else {
-                    status = 405;
-                    response = gson.toJson(Map.of("erro", "Método não permitido"));
-                }
-
-            } catch (Exception e) {
-                status = 500;
-                response = gson.toJson(Map.of("erro", e.getMessage()));
-            }
-
-            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-            exchange.sendResponseHeaders(status, response.getBytes().length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response.getBytes());
-            }
+            
+            HttpResponse response = usuarioService.handleRequest(method, path, exchange.getRequestBody());
+            
+            sendResponse(exchange, response);
         }
     }
 
     static class PropostaHandler implements HttpHandler {
+        private final PropostaService propostaService;
+
+        public PropostaHandler() {
+            this.propostaService = new PropostaService();
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
-            PropostaDAO dao = new PropostaDAO();
-            String response = "";
-            int status = 200;
-
-            try {
-                switch (method) {
-                    case "GET":
-                        List<Proposta> propostas = dao.listarTodas();
-                        List<PropostaResponseDTO> responseList = propostas.stream()
-                                .map(PropostaResponseDTO::new)
-                                .collect(Collectors.toList());
-                        response = gson.toJson(responseList);
-                        break;
-
-                    case "POST":
-                        PropostaDTO dto = gson.fromJson(
-                                new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8),
-                                PropostaDTO.class
-                        );
-
-                        Proposta nova = new Proposta();
-                        nova.setTitulo(dto.getTitulo());
-                        nova.setDescricao(dto.getDescricao());
-                        nova.setUsuarioId(dto.getUsuarioId());
-                        nova.setStatus("ENVIADA");
-                        nova.setDataEnvio(LocalDateTime.now());
-
-                        dao.inserir(nova);
-                        response = gson.toJson(new Response("Proposta cadastrada com sucesso!"));
-                        break;
-
-                    case "PUT": {
-                        String[] parts = path.split("/");
-                        if (parts.length < 3) {
-                            status = 400;
-                            response = gson.toJson(new Response("ID da proposta não informado na URL"));
-                            break;
-                        }
-                        int id = Integer.parseInt(parts[2]);
-
-                        PropostaUpdateDTO updateDTO = gson.fromJson(
-                                new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8),
-                                PropostaUpdateDTO.class
-                        );
-
-                        Proposta p = new Proposta();
-                        p.setId(id);
-                        p.setTitulo(updateDTO.getTitulo());
-                        p.setDescricao(updateDTO.getDescricao());
-                        p.setStatus(updateDTO.getStatus());
-
-                        dao.atualizar(p);
-                        response = gson.toJson(new Response("Proposta atualizada com sucesso!"));
-                        break;
-                    }
-
-                    case "DELETE": {
-                        String[] parts = path.split("/");
-                        if (parts.length < 3) {
-                            status = 400;
-                            response = gson.toJson(new Response("ID da proposta não informado na URL"));
-                            break;
-                        }
-                        int id = Integer.parseInt(parts[2]);
-                        dao.deletar(id);
-                        response = gson.toJson(new Response("Proposta removida com sucesso!"));
-                        break;
-                    }
-
-                    default:
-                        status = 405;
-                        response = gson.toJson(new Response("Método não permitido"));
-                        break;
-                }
-            } catch (Exception e) {
-                status = 500;
-                response = gson.toJson(new Response(e.getMessage()));
-            }
-
-            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-            exchange.sendResponseHeaders(status, response.getBytes().length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response.getBytes());
-            }
+            
+            HttpResponse response = propostaService.handleRequest(method, path, exchange.getRequestBody());
+            
+            sendResponse(exchange, response);
         }
     }
 
+    private static void sendResponse(HttpExchange exchange, HttpResponse response) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(response.getStatus(), response.getBody().getBytes().length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response.getBody().getBytes());
+        }
+    }
+
+    public static class HttpResponse {
+        private final int status;
+        private final String body;
+
+        public HttpResponse(int status, String body) {
+            this.status = status;
+            this.body = body;
+        }
+
+        public int getStatus() { return status; }
+        public String getBody() { return body; }
+    }
 
     private static class Response {
         private final String mensagem;
