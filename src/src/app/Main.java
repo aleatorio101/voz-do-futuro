@@ -104,6 +104,7 @@ public class Main {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
             PropostaDAO dao = new PropostaDAO();
             String response = "";
             int status = 200;
@@ -118,28 +119,60 @@ public class Main {
                         response = gson.toJson(responseList);
                         break;
 
-
                     case "POST":
-
                         PropostaDTO dto = gson.fromJson(
                                 new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8),
                                 PropostaDTO.class
                         );
 
-
                         Proposta nova = new Proposta();
                         nova.setTitulo(dto.getTitulo());
                         nova.setDescricao(dto.getDescricao());
                         nova.setUsuarioId(dto.getUsuarioId());
-
-
                         nova.setStatus("ENVIADA");
                         nova.setDataEnvio(LocalDateTime.now());
-
 
                         dao.inserir(nova);
                         response = gson.toJson(new Response("Proposta cadastrada com sucesso!"));
                         break;
+
+                    case "PUT": {
+                        String[] parts = path.split("/");
+                        if (parts.length < 3) {
+                            status = 400;
+                            response = gson.toJson(new Response("ID da proposta não informado na URL"));
+                            break;
+                        }
+                        int id = Integer.parseInt(parts[2]);
+
+                        PropostaUpdateDTO updateDTO = gson.fromJson(
+                                new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8),
+                                PropostaUpdateDTO.class
+                        );
+
+                        Proposta p = new Proposta();
+                        p.setId(id);
+                        p.setTitulo(updateDTO.getTitulo());
+                        p.setDescricao(updateDTO.getDescricao());
+                        p.setStatus(updateDTO.getStatus());
+
+                        dao.atualizar(p);
+                        response = gson.toJson(new Response("Proposta atualizada com sucesso!"));
+                        break;
+                    }
+
+                    case "DELETE": {
+                        String[] parts = path.split("/");
+                        if (parts.length < 3) {
+                            status = 400;
+                            response = gson.toJson(new Response("ID da proposta não informado na URL"));
+                            break;
+                        }
+                        int id = Integer.parseInt(parts[2]);
+                        dao.deletar(id);
+                        response = gson.toJson(new Response("Proposta removida com sucesso!"));
+                        break;
+                    }
 
                     default:
                         status = 405;
@@ -158,6 +191,7 @@ public class Main {
             }
         }
     }
+
 
     private static class Response {
         private final String mensagem;

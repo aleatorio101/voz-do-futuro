@@ -46,4 +46,30 @@ public class PropostaDAO {
             stmt.executeUpdate();
         }
     }
+
+    public void atualizar(Proposta proposta) throws SQLException {
+        String sql = "UPDATE propostas SET titulo = ?, descricao = ?, status = ? WHERE id = ?";
+
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, proposta.getTitulo());
+            stmt.setString(2, proposta.getDescricao());
+            stmt.setString(3, proposta.getStatus());
+            stmt.setInt(4, proposta.getId());
+            stmt.executeUpdate();
+        }
+    }
+
+    public void deletar(int id) throws SQLException {
+        String sql = "DELETE FROM propostas WHERE id = ?";
+
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
+
 }
