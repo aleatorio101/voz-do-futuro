@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -39,13 +40,28 @@ public class Main {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
+            String path = exchange.getRequestURI().getPath();
             UsuarioDAO dao = new UsuarioDAO();
             String response = "";
             int status = 200;
 
             try {
-                switch (method) {
-                    case "POST":
+                if ("POST".equals(method) && path.endsWith("/usuarios/id")) {
+
+                    String requestBody = new String(exchange.getRequestBody().readAllBytes());
+                    Map<String, String> body = gson.fromJson(requestBody, Map.class);
+                    String email = body.get("email");
+
+                    Integer id = dao.buscarIdPorEmail(email);
+                    if (id != null) {
+                        response = gson.toJson(Map.of("id", id));
+                    } else {
+                        status = 404;
+                        response = gson.toJson(Map.of("erro", "Usuário não encontrado"));
+                    }
+
+                } else if ("POST".equals(method) && path.endsWith("/usuarios")) {
+
                     String requestBody = new String(exchange.getRequestBody().readAllBytes());
                     UsuarioDTO usuarioDTO = gson.fromJson(requestBody, UsuarioDTO.class);
 
@@ -58,25 +74,22 @@ public class Main {
 
                     dao.inserir(novoUsuario);
                     response = "{\"mensagem\": \"Usuário criado com sucesso\"}";
-                    break;
 
-                    case "GET":
-                        List<Usuario> usuarios = dao.listarTodos();
-                        List<UsuarioResponseDTO> responseList = usuarios.stream()
-                                .map(UsuarioResponseDTO::new)
-                                .collect(Collectors.toList());
-                        response = gson.toJson(responseList);
-                        break;
+                } else if ("GET".equals(method)) {
+                    List<Usuario> usuarios = dao.listarTodos();
+                    List<UsuarioResponseDTO> responseList = usuarios.stream()
+                            .map(UsuarioResponseDTO::new)
+                            .collect(Collectors.toList());
+                    response = gson.toJson(responseList);
 
-
-                    default:
-                        status = 405;
-                        response = gson.toJson(new Response("Método não permitido"));
-                        break;
+                } else {
+                    status = 405;
+                    response = gson.toJson(Map.of("erro", "Método não permitido"));
                 }
+
             } catch (Exception e) {
                 status = 500;
-                response = gson.toJson(new Response(e.getMessage()));
+                response = gson.toJson(Map.of("erro", e.getMessage()));
             }
 
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");

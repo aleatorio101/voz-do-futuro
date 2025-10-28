@@ -39,4 +39,22 @@ public class UsuarioDAO {
             stmt.executeUpdate();
         }
     }
+
+    public Integer buscarIdPorEmail(String email) throws SQLException {
+        String sql = "SELECT id FROM usuarios WHERE email = ?";
+
+        try (Connection conn = ConnectionFactory.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        }
+
+        return null;
+    }
+
 }
