@@ -5,6 +5,8 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -57,32 +59,71 @@ public class Main {
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
+
+            if ("OPTIONS".equalsIgnoreCase(method)) {
+                sendResponse(exchange, new HttpResponse(204, ""));
+                return;
+            }
             
             HttpResponse response = propostaService.handleRequest(method, path, exchange.getRequestBody());
-            
             sendResponse(exchange, response);
         }
     }
 
     private static void sendResponse(HttpExchange exchange, HttpResponse response) throws IOException {
+       
+        response.getHeaders().forEach((key, value) -> 
+            exchange.getResponseHeaders().set(key, value)
+        );
+        
+        
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-        exchange.sendResponseHeaders(response.getStatus(), response.getBody().getBytes().length);
+        
+        
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+            return;
+        }
+
+        // Para outros métodos, envia a resposta normal
+        byte[] responseBody = response.getBody().getBytes("UTF-8");
+        exchange.sendResponseHeaders(response.getStatus(), responseBody.length);
         try (OutputStream os = exchange.getResponseBody()) {
-            os.write(response.getBody().getBytes());
+            os.write(responseBody);
         }
     }
 
     public static class HttpResponse {
         private final int status;
         private final String body;
+        private final Map<String, String> headers;
 
         public HttpResponse(int status, String body) {
             this.status = status;
             this.body = body;
+            this.headers = new HashMap<>();
+            addCorsHeaders();
+        }
+
+        public HttpResponse(int status, String body, Map<String, String> customHeaders) {
+            this.status = status;
+            this.body = body;
+            this.headers = new HashMap<>();
+            if (customHeaders != null) this.headers.putAll(customHeaders);
+            addCorsHeaders();
+        }
+
+        private void addCorsHeaders() {
+            // ajuste conforme necessidade (remova '*' em produção)
+            headers.put("Access-Control-Allow-Origin", "*");
+            headers.put("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            headers.put("Access-Control-Allow-Headers", "Content-Type, Authorization");
         }
 
         public int getStatus() { return status; }
         public String getBody() { return body; }
+        public Map<String, String> getHeaders() { return headers; }
     }
 
     private static class Response {

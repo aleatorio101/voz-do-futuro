@@ -1,11 +1,11 @@
-const API_MAIN = "Main";
+const API_BASE = "http://localhost:8080";
 let emailValidado = null;
 let mapaUsuarios = {};
 
 // Carregar mapa de usuários
 function carregarMapaUsuarios() {
   $.ajax({
-    url: `${API_MAIN}?action=listarUsuarios`,
+    url: `${API_BASE}/usuarios`,
     type: "GET",
     dataType: "json",
     success: function (usuarios) {
@@ -25,7 +25,7 @@ function carregarMapaUsuarios() {
 // get do lado direito para criar os cards dinamicamente
 function carregarPropostas() {
   $.ajax({
-    url: `${API_MAIN}?action=listarPropostas`,
+    url: `${API_BASE}/propostas`,
     type: "GET",
     dataType: "json",
     success: function (res) {
@@ -117,7 +117,7 @@ function salvarProposta(propostaId) {
   };
 
   $.ajax({
-    url: `${API_MAIN}?action=atualizarProposta&id=${propostaId}`,
+    url: `${API_BASE}/propostas/${propostaId}`,
     type: "PUT",
     contentType: "application/json",
     data: JSON.stringify(proposta),
@@ -160,14 +160,14 @@ $("#formProposta").on("submit", function (e) {
   };
 
   $.ajax({
-    url: `${API_MAIN}?action=criarUsuario`,
+    url: `${API_BASE}/usuarios`,
     type: "POST",
     contentType: "application/json",
     data: JSON.stringify(usuario),
     success: function (resUsuario) {
       // Buscar o ID do usuário criado pelo email
       $.ajax({
-        url: `${API_MAIN}?action=buscarIdPorEmail`,
+        url: `${API_BASE}/usuarios/id`,
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify({ email: dados.email }),
@@ -181,7 +181,7 @@ $("#formProposta").on("submit", function (e) {
           };
 
           $.ajax({
-            url: `${API_MAIN}?action=criarProposta`,
+            url: `${API_BASE}/propostas`,
             type: "POST",
             contentType: "application/json",
             data: JSON.stringify(proposta),
