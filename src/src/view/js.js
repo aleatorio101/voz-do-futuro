@@ -1,9 +1,31 @@
 const API_MAIN = "Main";
+let emailValidado = null;
+let mapaUsuarios = {};
+
+// Carregar mapa de usuários
+function carregarMapaUsuarios() {
+  $.ajax({
+    url: `${API_MAIN}?action=listarUsuarios`,
+    type: "GET",
+    dataType: "json",
+    success: function (usuarios) {
+      mapaUsuarios = {};
+      usuarios.forEach(function (usuario) {
+        mapaUsuarios[usuario.id] = usuario.email;
+      });
+      carregarPropostas();
+    },
+    error: function (xhr) {
+      console.error("Erro ao carregar usuários:", xhr);
+      carregarPropostas();
+    },
+  });
+}
 
 // get do lado direito para criar os cards dinamicamente
 function carregarPropostas() {
   $.ajax({
-    url: `${API_MAIN}?action=listarPropostas`, // verificar a rota e arrumar essa porra
+    url: `${API_MAIN}?action=listarPropostas`,
     type: "GET",
     dataType: "json",
     success: function (res) {
@@ -16,15 +38,24 @@ function carregarPropostas() {
         return;
       }
 
-      $("#listaPropostas").empty(); //vazio
+      $("#listaPropostas").empty(); 
       res.forEach(function (p) {
         const card = `
-            <div class="glass p-3 p-md-4">
-              <h5 class="fw-semibold mb-0">${p.titulo}</h5>
-              <p class="mb-1 text-muted">${p.descricao}</p>
-              <small>Status: ${p.status}</small>
+            <div class="glass p-3 p-md-4 position-relative" id="proposta-${p.id}" data-usuario-id="${p.usuarioId}">
+              <button class="btn btn-link p-0 editar-proposta position-absolute top-0 end-0 m-2" data-id="${p.id}" style="text-decoration: none; cursor: pointer;">
+                ✏️
+              </button>
+              <h5 class="fw-semibold mb-0 titulo-proposta">${p.titulo}</h5>
+              <p class="mb-1 text-muted descricao-proposta">${p.descricao}</p>
+              <small class="status-proposta" data-status="${p.status}">Status: ${p.status}</small>
             </div>`;
         $("#listaPropostas").append(card);
+      });
+
+      // Event listeners para edição
+      $(".editar-proposta").on("click", function() {
+        const propostaId = $(this).data("id");
+        entrarModoEdicao(propostaId);
       });
     },
     error: function () {
@@ -36,41 +67,144 @@ function carregarPropostas() {
     },
   });
 }
-$(document).ready(carregarPropostas);
+
+// Entrar no modo de edição
+function entrarModoEdicao(propostaId) {
+  const card = $(`#proposta-${propostaId}`);
+  const titulo = card.find(".titulo-proposta").text();
+  const descricao = card.find(".descricao-proposta").text();
+  const status = card.find(".status-proposta").data("status");
+
+  card.html(`
+    <div class="mb-2">
+      <label class="small-label">Título</label>
+      <input type="text" class="form-control titulo-edit" value="${titulo}">
+    </div>
+    <div class="mb-2">
+      <label class="small-label">Descrição</label>
+      <textarea class="form-control descricao-edit" rows="2">${descricao}</textarea>
+    </div>
+    <div class="mb-2">
+      <label class="small-label">Status</label>
+      <select class="form-select status-edit">
+        <option value="ENVIADA" ${status === "ENVIADA" ? "selected" : ""}>ENVIADA</option>
+        <option value="APROVADA" ${status === "APROVADA" ? "selected" : ""}>APROVADA</option>
+        <option value="REJEITADA" ${status === "REJEITADA" ? "selected" : ""}>REJEITADA</option>
+      </select>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-success salvar-proposta" data-id="${propostaId}">Salvar</button>
+      <button class="btn btn-sm btn-secondary cancelar-edicao" data-id="${propostaId}">Cancelar</button>
+    </div>
+  `);
+
+  $(".salvar-proposta").on("click", function() {
+    const id = $(this).data("id");
+    salvarProposta(id);
+  });
+
+  $(".cancelar-edicao").on("click", function() {
+    carregarPropostas();
+  });
+}
+
+function salvarProposta(propostaId) {
+  const card = $(`#proposta-${propostaId}`);
+  const proposta = {
+    titulo: card.find(".titulo-edit").val().trim(),
+    descricao: card.find(".descricao-edit").val().trim(),
+    status: card.find(".status-edit").val(),
+  };
+
+  $.ajax({
+    url: `${API_MAIN}?action=atualizarProposta&id=${propostaId}`,
+    type: "PUT",
+    contentType: "application/json",
+    data: JSON.stringify(proposta),
+    success: function (res) {
+      showToastOk();
+      carregarPropostas();
+    },
+    error: function (xhr) {
+      alert("Erro ao salvar proposta.");
+      console.error(xhr.responseText || xhr);
+    },
+  });
+}
+
+
+$(document).ready(function() {
+  carregarMapaUsuarios();
+});
 
 // post usando ajax do formulário esquerdo
 $("#formProposta").on("submit", function (e) {
   e.preventDefault();
-
-  // validação para nao ir sem itens obrigatórios para o ajax
   if (!this.checkValidity()) {
     this.classList.add("was-validated");
     return;
   }
 
-  //Lucas lembra que eu falei que tinha como formatar?
-  const proposta = {
-    titulo: $("#titulo").val().trim(), // da pra formatar cada um deles assim ou dentro do ajax
+  const dados = {
+    nome: $("#nome").val().trim(),
+    email: $("#email").val().trim(),
+    titulo: $("#titulo").val().trim(),
     descricao: $("#descricao").val().trim(),
-    usuarioId: parseInt($("#usuarioId").val()),
-    status: "ENVIADA",
-    dataEnvio: new Date().toISOString().slice(0, 19).replace("T", " "),
+  };
+
+  const usuario = {
+    nome: dados.nome,
+    email: dados.email,
+    senha: "padrao123", 
+    tipo: "CIDADAO", 
   };
 
   $.ajax({
-    url: `${API_MAIN}?action=criarProposta`, // verificar onde demonios esta a rota
+    url: `${API_MAIN}?action=criarUsuario`,
     type: "POST",
-    contentType: "application/json", // ai no caso a gente pode formatar aqui dentro tb legal neh?
-    data: JSON.stringify(proposta),
-    success: function (res) {
-      console.log("Proposta enviada com sucesso:", res); //lembrar de retirar o log dps de testar
-      showToastOk();
-      $("#formProposta")[0].reset();
-      $("#formProposta").removeClass("was-validated");
-      carregarPropostas(); // para atualizar ao fazer o post
+    contentType: "application/json",
+    data: JSON.stringify(usuario),
+    success: function (resUsuario) {
+      // Buscar o ID do usuário criado pelo email
+      $.ajax({
+        url: `${API_MAIN}?action=buscarIdPorEmail`,
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ email: dados.email }),
+        success: function (resId) {
+          const usuarioId = resId.id;
+
+          const proposta = {
+            titulo: dados.titulo,
+            descricao: dados.descricao,
+            usuarioId: usuarioId,
+          };
+
+          $.ajax({
+            url: `${API_MAIN}?action=criarProposta`,
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(proposta),
+            success: function (resProposta) {
+              showToastOk();
+              $("#formProposta")[0].reset();
+              $("#formProposta").removeClass("was-validated");
+              carregarPropostas(); 
+            },
+            error: function (xhr) {
+              alert("Erro ao enviar proposta.");
+              console.error(xhr.responseText || xhr);
+            },
+          });
+        },
+        error: function (xhr) {
+          alert("Erro ao buscar ID do usuário.");
+          console.error(xhr.responseText || xhr);
+        },
+      });
     },
     error: function (xhr) {
-      alert("Erro ao enviar proposta.");
+      alert("Erro ao criar usuário.");
       console.error(xhr.responseText || xhr);
     },
   });

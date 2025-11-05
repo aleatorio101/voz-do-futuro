@@ -185,10 +185,17 @@
 
                     <form id="formProposta" class="needs-validation" novalidate>
                         <div class="mb-3">
-                            <label class="small-label" for="usuarioId">ID do usuário</label>
-                            <input type="number" id="usuarioId" name="usuarioId" class="form-control form-control-lg"
-                                placeholder="Informe seu ID de usuário" required>
-                            <div class="invalid-feedback">Informe o ID do usuário.</div>
+                            <label class="small-label" for="nome">Nome</label>
+                            <input type="text" id="nome" name="nome" class="form-control form-control-lg"
+                                placeholder="Seu nome completo" required>
+                            <div class="invalid-feedback">Informe seu nome.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small-label" for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control form-control-lg"
+                                placeholder="seu@email.com" required>
+                            <div class="invalid-feedback">Informe um email válido.</div>
                         </div>
                         
                         <div class="mb-3">
@@ -199,7 +206,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="small-label" for="descricao">Descrição / Problema</label>
+                            <label class="small-label" for="descricao">Descrição do problema</label>
                             <textarea id="descricao" name="descricao" class="form-control form-control-lg" rows="3"
                                 placeholder="Descreva o problema ou situação que quer resolver..." required></textarea>
                             <div class="invalid-feedback">Descreva o problema.</div>
@@ -220,6 +227,7 @@
                             <span class="title-emoji">💡</span> Propostas da Comunidade
                         </h3>
                     </div>
+
                     <div id="listaPropostas" class="d-flex flex-column gap-3 mt-3 flex-grow-1"></div>
                 </div>
             </div>
