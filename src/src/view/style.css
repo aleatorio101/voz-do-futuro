@@ -102,7 +102,6 @@ body {
     padding: 1rem;
 }
 
-.btn-rocket::before { content: "🚀"; margin-right: .5rem; }
 .btn-primary {
     background: linear-gradient(135deg, var(--verde-escuro) 0%, var(--verde-medio) 100%);
     border: none;

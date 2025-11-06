@@ -32,7 +32,7 @@ function carregarPropostas() {
       if (!res || res.length === 0) {
         $("#listaPropostas").html(`
             <div class="glass p-4 text-center text-muted">
-              Nenhuma proposta ainda. Envie a primeira usando o formulário ao lado. 🎉
+              Nenhuma proposta ainda. Envie a primeira usando o formulário ao lado.
             </div>
           `);
         return;
@@ -61,7 +61,7 @@ function carregarPropostas() {
     error: function () {
         $("#listaPropostas").html(`
           <div class="glass p-4 text-center text-muted">
-            Nenhuma proposta ainda.<br> Envie a primeira usando o formulário ao lado. 🎉
+            Nenhuma proposta ainda.<br> Envie a primeira usando o formulário ao lado. 
           </div>
         `);
     },
